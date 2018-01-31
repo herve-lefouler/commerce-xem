@@ -1,0 +1,15 @@
+xem.test: 
+  path: '/xem-test'
+  defaults: 
+    _controller: '\Drupal\xem\Controller\XemTestController::connectionTest'
+    _title: 'Connection Xem test'
+  requirements: 
+    _permission: 'access content'
+
+xem.qrcodeTest:
+  path: '/xem-qr-code'
+  defaults:
+    _controller: '\Drupal\xem\Controller\XemTestController::qrCodeTest'
+    _title: 'Test QR Code'
+  requirements: 
+    _permission: 'access content'
