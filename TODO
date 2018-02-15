@@ -1,0 +1,24 @@
+
+
+Workflow de paiement XEM
+
+* L'utilisateur choisit le mode de paiement XEM
+
+* L'utilisateur valide un QR Code avec son mobile
+OU
+* L'utilisateur saisit son paiement manuellement depuis son portefeuille XEM
+
+* On vérifie qu'une transaction est arrivée. Deux vérifications : la référence 
+ET le montant. Bloquage le temps que la transaction arrive - probablement à 
+implémenter en JS / AJAX.
+
+* Si paiement OK : on valide la commande
+
+* Sinon : paiement annulé / montant incorrect
+
+--> Appel de l'URL /payment/notify/{commerce_payment_gateway}
+--> Passage de paramètres en POST ?
+
+TODO
+
+* Présenter les infos de paiement manuel via la wallet

@@ -1,0 +1,11 @@
+{
+    "name": "drupal/commerce_xem",
+    "type": "drupal-module",
+    "description": "Integrate Xem cryptocurrency payment with Drupal Commerce.",
+    "homepage": "http://drupal.org/project/commerce_xem",
+    "license": "GPL-2.0+",
+    "require": {
+        "tecnickcom/tc-lib-barcode": "^1.15"
+    },
+    "minimum-stability": "dev"
+}

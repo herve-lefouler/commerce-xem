@@ -1,8 +1,8 @@
 <?php
 
-namespace Drupal\xem;
+namespace Drupal\commerce_xem;
 
-use Drupal\xem\php2nem\NEM;
+use Drupal\commerce_xem\php2nem\NEM;
 
 class NemApi {
   
@@ -68,6 +68,16 @@ class NemApi {
     return self::$instance->_nemSend($path);
   }
   
-  
+  /**
+   * Get latest transactions
+   * 
+   * @param type $address
+   * @param type $test
+   * @return boolean
+   */
+  public function getLatestTransactions($address) {
+    $path = 'account/transfers/incoming?address=' . $address;
+    return self::$instance->_nemSend($path);
+	}
   
 }

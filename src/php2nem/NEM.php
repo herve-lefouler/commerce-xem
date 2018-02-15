@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\xem\php2nem;
+namespace Drupal\commerce_xem\php2nem;
 
 #	
 #	NIS API documentation:
@@ -126,7 +126,6 @@ class NEM {
 		
 		//curl 
 		$ch = curl_init();
-    print_r($url.$params);
 		curl_setopt($ch, CURLOPT_URL, $url.$params);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); 
 		curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);

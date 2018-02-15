@@ -1,5 +1,0 @@
-name: Xem integration
-type: module
-description: "Xem integration core module."
-package: Xem
-core: 8.x

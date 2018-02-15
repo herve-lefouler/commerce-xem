@@ -1,0 +1,7 @@
+     
+xem-checkout:
+  js:
+    js/xem-checkout.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupalSettings

@@ -1,5 +1,0 @@
-     
-xem-qrcode:
-  js:
-    js/qrcodejs/qrcode.js: {}
-    js/xem-qrcode.js: {}

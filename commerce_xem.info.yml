@@ -1,0 +1,9 @@
+name: Commerce Xem integration
+type: module
+description: "Commerce Xem payment method."
+package: Commerce
+# core: 8.x
+dependencies:
+  - commerce:commerce
+  - commerce:commerce_payment
+core: 8.x
