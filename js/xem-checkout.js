@@ -9,7 +9,6 @@
                         
                     },
                     checkXemTransaction: function () {
-                        //this.nanobar.go(25);
                             $.ajax({
                                 url: drupalSettings.xem.notifyUrl,
                                 type: 'post',
@@ -18,9 +17,8 @@
                                     orderId: drupalSettings.xem.orderId
                                 }
                             }).done(function (result) {
-                                // $('#xem-check').html('<p id="xem-check">Checking..</p>');
-                                console.log(result.match);
-                                // If a Xem transaction has been found
+                                console.log(result);
+                                // If a Xem transaction has been found and validated
                                 if(result.match === true) { 
                                     location.reload();
                                 }
@@ -28,7 +26,6 @@
                                     xemPayment.checkXemTransaction();
                                 }, 5000);
                             });
-                        //this.nanobar.go(100);
                     },
                 };
                 xemPayment.init();

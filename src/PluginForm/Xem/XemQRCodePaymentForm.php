@@ -7,6 +7,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Com\Tecnick\Barcode\Barcode;
 use Drupal\Core\Render\Markup;
 use Drupal\Component\Serialization\Json;
+use Drupal\commerce_xem\XemCurrency;
 
 class XemQRCodePaymentForm extends PaymentGatewayFormBase {
   use \Drupal\Core\StringTranslation\StringTranslationTrait;
@@ -21,19 +22,17 @@ class XemQRCodePaymentForm extends PaymentGatewayFormBase {
     $xemPublicKey = $paymentGatewayPlugin->getXemPublicKey();
     
     $order    = $payment->getOrder();
-    $price    = $payment->getAmount();
     $store_id = $order->getStoreId();
-    
-    //$payment_entity = $payment_gateway_plugin->requestQRCode((string) $order->id(), $price, null, $store_id);
-    
     $message = $paymentGatewayPlugin->getXemUniqueMessage($order, $paymentGatewayPlugin->getMode());
+    
+    $xemPrice = XemCurrency::convertToXem($order, TRUE);
 
     $data = [
       "v" => ($paymentGatewayPlugin->getMode() == 'test') ? 1 : 2, // Environnment, 1 : TestNet. 2 : MainNet. 
       "type" => 2,
       "data" => [
         "addr" => str_replace('-', '', strtoupper($xemPublicKey)),
-        "amount" => 1 * 1000000, // We send micro Xem
+        "amount" => $xemPrice * 1000000, // We send micro Xem
         "msg" => $message,
         "name" => "XEM payment From Drupal 8"
       ]
@@ -53,9 +52,25 @@ class XemQRCodePaymentForm extends PaymentGatewayFormBase {
     $form['qr'] = [
       '#type' => 'container'
     ];
+    $amount = $order->getTotalPrice();
+    $form['qr']['order_total'] = [
+      '#type' => 'item',
+      '#title' => $this->t('Total fiat amount'),
+      '#markup' => $amount->__toString(),
+      '#weight' => -3
+    ];
+    $form['qr']['logo'] = [
+      '#theme' => 'image',
+      '#uri' => \Drupal::service('module_handler')
+                  ->getModule('commerce_xem')->getPath() . '/images/logo.png',
+      '#weight' => -2
+    ]; 
     $form['qr']['commerce_qr_notice'] = [
       '#prefix' => '<div class="checkout-help">',
-      '#markup' => $this->t('Please scan the QR-Code below to complete the payment on your mobile Xem App.'),
+      '#markup' => $this->t('Please scan the QR-Code below to complete the payment'
+          . ' on your mobile Xem App. We will ask you for a :amount XEM payment.', [
+            ':amount' => $xemPrice
+          ]),
       '#weight' => -1,
       '#suffix' => '</div>'
     ];
@@ -72,6 +87,14 @@ class XemQRCodePaymentForm extends PaymentGatewayFormBase {
           . ' Don\'t miss the message.') ,
       '#weight' => 1,
     ];
+    $form['wallet']['amount'] = [
+      '#type' => 'item',
+      '#title' => $this->t('Amount'),
+      '#markup' => $this->t(':xemAmount XEM', [
+        ':xemAmount' => $xemPrice
+      ]),
+      '#weight' => 2,
+    ];
     $form['wallet']['public_key'] = [
       '#type' => 'item',
       '#title' => $this->t('Public key'),
@@ -83,6 +106,11 @@ class XemQRCodePaymentForm extends PaymentGatewayFormBase {
       '#title' => $this->t('Message'),
       '#markup' => $message,
       '#weight' => 3,
+    ];
+    $form['wallet']['waiting_for'] = [
+      '#type' => 'item',
+      '#markup' => $this->t('Waiting for payment'),
+      '#weight' => 4
     ];
   
     /*

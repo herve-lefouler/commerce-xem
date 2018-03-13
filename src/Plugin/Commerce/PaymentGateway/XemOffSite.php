@@ -10,15 +10,10 @@ use Drupal\Core\Form\FormStateInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Drupal\commerce_xem\NemApi;
-use Drupal\Core\Url;
+use Drupal\commerce_xem\XemCurrency;
 
 /**
  * Provides Xem QR Code payment method.
- * 
- * @todo
- *  Passer le VRAI montant, vérifier le montant
- *  A voir : affichage du prix en XEM
- *  Prévoir classe Helper dédiée
  *
  * @CommercePaymentGateway(
  *   id = "qrcode_xem_payment_method",
@@ -29,7 +24,7 @@ use Drupal\Core\Url;
  *   }
  * )
  */
-class XemOffSite extends OffsitePaymentGatewayBase implements SupportsRefundsInterface{
+class XemOffSite extends OffsitePaymentGatewayBase {
 
   /**
    * {@inheritdoc}
@@ -77,50 +72,6 @@ class XemOffSite extends OffsitePaymentGatewayBase implements SupportsRefundsInt
   public function getXemPublicKey() {
     return $this->configuration['xem_public_key'];
   }
-
-  /**
-   * {@inheritdoc}
-   * 
-   * @todo
-   *  Remboursement possible via une adresse XEM
-   *  Cf back Office [admin/commerce/orders/8/payments/4/operation/refund]
-   */
-  public function refundPayment(PaymentInterface $payment, Price $amount = NULL) {
-    /*$this->assertPaymentState($payment, ['completed', 'partially_refunded']);
-    // If not specified, refund the entire amount.
-    $amount = $amount ?: $payment->getAmount();
-    // Validate the requested amount.
-    $this->assertRefundAmount($payment, $amount);
-
-    if (!$this->gateway_lib) {
-      $this->loadGatewayConfig();
-    }
-
-    $gateway = $this->gateway_lib;
-
-    if (!$gateway->getMerchant()->get('cert_path') || !$gateway->getMerchant()->get('key_path')) {
-      throw new \InvalidArgumentException($this->t('Could not load the apiclient_cert.pem or apiclient_key.pem files, which are required for WeChat Refund. Did you configure them?'));
-    }
-
-    $result = $gateway->refund($payment->getOrderId(), $payment->getOrderId() . date("zHis"), floatval($payment->getAmount()) * 100, floatval($amount->getNumber()) * 100);
-
-    if (!$result->return_code == 'SUCCESS' || !$result->result_code == 'SUCCESS'){
-      // For any reason, we cannot get a preorder made by WeChat service
-      throw new InvalidRequestException($this->t('WeChat Service cannot approve this request: ') . $result->err_code_des);
-    }
-
-    $old_refunded_amount = $payment->getRefundedAmount();
-    $new_refunded_amount = $old_refunded_amount->add($amount);
-    if ($new_refunded_amount->lessThan($payment->getAmount())) {
-      $payment->setState('partially_refunded');
-    }
-    else {
-      $payment->setState('refunded');
-    }
-
-    $payment->setRefundedAmount($new_refunded_amount);
-    $payment->save();*/
-  }
   
   /**
    * Create a payment entity. 
@@ -133,13 +84,11 @@ class XemOffSite extends OffsitePaymentGatewayBase implements SupportsRefundsInt
     
     if (empty($paymentId)) {
       $payment_storage = $this->entityTypeManager->getStorage('commerce_payment');
-      
-      $xemAmount = $xemTransaction->transaction->amount / 1000000;
       $requestTime = \Drupal::time()->getRequestTime();
       // Create a new payment entity
       $payment = $payment_storage->create([
         'state' => $paymentParams['state'],
-        'amount' => $paymentParams['amount'] ? $paymentParams['amount'] : new Price(strval($xemAmount), 'XEM'),
+        'amount' => $paymentParams['amount'],
         'payment_gateway' => $this->entityId,
         'order_id' => $paymentParams['orderId'],
         'test' => $this->getMode() == 'test',
@@ -175,9 +124,6 @@ class XemOffSite extends OffsitePaymentGatewayBase implements SupportsRefundsInt
     $message = $request->get('message');
     $orderId = $request->get('orderId');
     $order = \Drupal::entityTypeManager()->getStorage('commerce_order')->load($orderId);
-
-    // \Drupal::logger('xem')->notice('User message : %message', ['%message' => $message]);
-    
     $config = $this->getConfiguration();
     
     // Check the message on last XEM transactions
@@ -192,27 +138,33 @@ class XemOffSite extends OffsitePaymentGatewayBase implements SupportsRefundsInt
     foreach($transactionsDecoded->data as $transaction) {
       // Decode transaction message
       $transactionMessage = self::hex2str($transaction->transaction->message->payload);
+      
       if ($transactionMessage == $message) { // If we find the current order message
-        // Create a new payment entity
-        $payment = $this->createPayment([
-          'orderId' => $orderId,
-          'state' => 'completed'
-        ], $transaction);
-        
-        \Drupal::logger('xem')->notice('SAVED ORDER : User message : %message', ['%message' => $message]);
-        // @todo
-        // Vérifier que la totalité du montant est réglé
-        
-        // Save order state to completed
-        $this->setOrderState($order, 'place');
-        $order->save();
-        
-        // Return response for JS
-        $data = [
-          'match' => TRUE
-        ];
-        return new JsonResponse($data);
-        break;
+        $xemPrice = XemCurrency::convertToXem($order);
+        $amountInMicroXem = $transaction->transaction->amount;
+        if ($amountInMicroXem >= $xemPrice * 1000000) {
+          // Create a new payment entity
+          $payment = $this->createPayment([
+            'orderId' => $orderId,
+            'amount' => $order->getTotalPrice(),
+            'state' => 'completed'
+          ], $transaction);
+
+          \Drupal::logger('xem')->notice('Xem order saved : '
+              . 'User message : %message. Xem Amount: %xemAmount', 
+            ['%message' => $message, '%xemAmount' => $xemPrice]
+          );
+          // Save order state to completed
+          $this->setOrderState($order, 'place');
+          $order->save();
+
+          // Return response for JS
+          $data = [
+            'match' => TRUE
+          ];
+          return new JsonResponse($data);
+          break;
+        }
       }
     }
     return new JsonResponse($data);
