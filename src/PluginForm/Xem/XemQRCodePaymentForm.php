@@ -56,7 +56,10 @@ class XemQRCodePaymentForm extends PaymentGatewayFormBase {
     $form['qr']['order_total'] = [
       '#type' => 'item',
       '#title' => $this->t('Total fiat amount'),
-      '#markup' => $amount->__toString(),
+      '#markup' => $this->t(':price :currency_code', [
+        ':price' => number_format($amount->getNumber(), 2),
+        ':currency_code' => $amount->getCurrencyCode()
+      ]),
       '#weight' => -3
     ];
     $form['qr']['logo'] = [

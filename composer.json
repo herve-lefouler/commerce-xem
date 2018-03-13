@@ -5,6 +5,7 @@
     "homepage": "http://drupal.org/project/commerce_xem",
     "license": "GPL-2.0+",
     "require": {
+        "drupal/commerce": "~2.0",
         "tecnickcom/tc-lib-barcode": "^1.15"
     },
     "minimum-stability": "dev"
