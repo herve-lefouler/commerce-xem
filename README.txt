@@ -32,3 +32,8 @@ This module does not create a "Xem" currency for Drupal Commerce.
 At the moment, Drupal commerce does not give the ability to add "non official" 
 currencies. A numeric ISO 4217 code is required, and cryptocurrencies does not 
 have this kind of code, even Bitcoin. 
+
+## About Xem
+
+Want to know more about Nem and their Xem cryptocurrency ? 
+Check their website : https://nem.io/
