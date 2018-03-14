@@ -1,7 +1,21 @@
+/**
+ * @file
+ * Condition UI behaviors.
+ */
+
 (function ($, Drupal, drupalSettings) {
+    
     "use strict";
 
-    Drupal.behaviors.xem_qrcode = {
+    /**
+      * Redirect user to checkout complete when a valid Xem transaction is found. 
+      *
+      * @type {Drupal~behavior}
+      *
+      * @prop {Drupal~behaviorAttach} attach
+      *   Attaches the behavior for the condition summaries.
+      */
+    Drupal.behaviors.xem_checkout_redirection = {
         attach: function (context) {
             $(function () {
                 var xemPayment = {
@@ -17,11 +31,13 @@
                                     orderId: drupalSettings.xem.orderId
                                 }
                             }).done(function (result) {
-                                console.log(result);
                                 // If a Xem transaction has been found and validated
-                                if(result.match === true) { 
+                                if(result.match === true) {
+                                    // Reload the current page
+                                    // The user will be redirect to checkout complete
                                     location.reload();
                                 }
+                                // Check for transactions every 5 seconds
                                 setTimeout(function() {
                                     xemPayment.checkXemTransaction();
                                 }, 5000);

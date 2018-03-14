@@ -2,10 +2,7 @@
 
 namespace Drupal\commerce_xem\Plugin\Commerce\PaymentGateway;
 
-use Drupal\commerce_payment\Entity\PaymentInterface;
 use Drupal\commerce_payment\Plugin\Commerce\PaymentGateway\OffsitePaymentGatewayBase;
-use Drupal\commerce_payment\Plugin\Commerce\PaymentGateway\SupportsRefundsInterface;
-use Drupal\commerce_price\Price;
 use Drupal\Core\Form\FormStateInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -45,12 +42,20 @@ class XemOffSite extends OffsitePaymentGatewayBase {
 
   /**
    * {@inheritdoc}
-   * 
-   * @todo Valider la public key en effectuant une requête au WS. 
-   *  - prévoir cas MainNet et TestNet
    */
   public function validateConfigurationForm(array &$form, FormStateInterface $form_state) {
+    $config = $this->getConfiguration();
+    $isTest = ($config['mode'] == 'test');
+    $nemApi = NemApi::getInstance($isTest);
     
+    // Get account info from the public key
+    $values = $form_state->getValue($form['#parents']);
+    $accountInfo = $nemApi->getAccountInfo($values['xem_public_key']);
+    $accountInfoDecoded = json_decode($accountInfo);
+    
+    if (!empty($accountInfoDecoded->error)) {
+      $form_state->setError($form['xem_public_key'], t('The Xem public key is invalid or is not found.'));
+    }
   }
 
   /**
@@ -65,7 +70,7 @@ class XemOffSite extends OffsitePaymentGatewayBase {
   }
   
   /**
-   * Return the xem public key
+   * Return the xem public key. 
    * 
    * @return string
    */
@@ -74,7 +79,13 @@ class XemOffSite extends OffsitePaymentGatewayBase {
   }
   
   /**
-   * Create a payment entity. 
+   * Create and save a payment entity with Xem remote id. 
+   * 
+   * @param array $paymentParams
+   *  Payment properties
+   * 
+   * @param object $xemTransaction
+   *  A Xem transaction returned by the Xem Web Service
    */
   private function createPayment($paymentParams = [], $xemTransaction) {
     $query = \Drupal::entityQuery('commerce_payment')
@@ -102,8 +113,13 @@ class XemOffSite extends OffsitePaymentGatewayBase {
   }
   
   /**
+   * Save order state
    * 
-   * @param type $order
+   * @param Order $order
+   *  An Order object
+   * 
+   * @param string $state
+   *  The order state
    */
   private function setOrderState($order, $state = 'place') {
     $orderState = $order->getState();
@@ -116,9 +132,6 @@ class XemOffSite extends OffsitePaymentGatewayBase {
 
   /**
    * {@inheritdoc}
-   * 
-   * @todo
-   *  Vérifier le montant
    */
   public function onNotify(Request $request) {
     $message = $request->get('message');
@@ -139,9 +152,11 @@ class XemOffSite extends OffsitePaymentGatewayBase {
       // Decode transaction message
       $transactionMessage = self::hex2str($transaction->transaction->message->payload);
       
-      if ($transactionMessage == $message) { // If we find the current order message
+      // If we find the current order message
+      if ($transactionMessage == $message) {
         $xemPrice = XemCurrency::convertToXem($order);
         $amountInMicroXem = $transaction->transaction->amount;
+        // Check the Xem amount
         if ($amountInMicroXem >= $xemPrice * 1000000) {
           // Create a new payment entity
           $payment = $this->createPayment([
@@ -157,7 +172,6 @@ class XemOffSite extends OffsitePaymentGatewayBase {
           // Save order state to completed
           $this->setOrderState($order, 'place');
           $order->save();
-
           // Return response for JS
           $data = [
             'match' => TRUE
@@ -188,8 +202,10 @@ class XemOffSite extends OffsitePaymentGatewayBase {
    * Create a unique Xem message to identify the transaction
    * 
    * @param $order
-   * @param string $host
    * @param string $mode
+   * 
+   * @return string md5
+   *  a MD5 hash
    */
   public function getXemUniqueMessage($order, $mode) {
     $str = '';

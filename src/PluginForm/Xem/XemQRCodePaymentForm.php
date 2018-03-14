@@ -9,6 +9,9 @@ use Drupal\Core\Render\Markup;
 use Drupal\Component\Serialization\Json;
 use Drupal\commerce_xem\XemCurrency;
 
+/**
+ * The Xem payment form on checkout. 
+ */
 class XemQRCodePaymentForm extends PaymentGatewayFormBase {
   use \Drupal\Core\StringTranslation\StringTranslationTrait;
   
@@ -141,8 +144,6 @@ class XemQRCodePaymentForm extends PaymentGatewayFormBase {
    * {@inheritdoc}
    */
   public function validateConfigurationForm(array &$form, FormStateInterface $form_state) {
-    /** @var \Drupal\commerce_payment\Entity\PaymentMethodInterface $payment_method */
-    $payment_method = $this->entity;
   }
 
   /**

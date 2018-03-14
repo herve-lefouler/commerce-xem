@@ -3,21 +3,34 @@
 
 namespace Drupal\commerce_xem;
 
-use Drupal\commerce_price\Price;
 use Drupal\Component\Serialization\Json;
 
+/**
+ * Conversion from Drupal Commerce currencies to Xem. 
+ */
 class XemCurrency {
   
+  /**
+   * The coin market cap URL for conversion. 
+   * 
+   * @var string $url
+   */
   const COIN_MARKET_CAP_URL = 'https://api.coinmarketcap.com/v1/ticker/nem';
   
   
   /**
    * Get current Xem Data from Coin Market Cap
    * 
-   * @param Price $price
-   * @return boolean
+   * An order object
+   * @param Drupal\commerce_order\Entity\Order $order
+   * 
+   * If TRUE : save this Xem amount with the order
+   * @param boolean $save
+   * 
+   * Full Xem data information, with the Xem amount
+   * @return array xemData
    */
-  public static function getCurrentXemData($order, $save = FALSE) {
+  public static function getCurrentXemData(\Drupal\commerce_order\Entity\Order $order, $save = FALSE) {
     $xemData = $order->getData('xemData');
     if (empty($xemData)) {
       $price = $order->getTotalPrice();
@@ -52,15 +65,19 @@ class XemCurrency {
   /**
    * Convert a Drupal Commerce Price to a Xem price
    * 
-   * @param Price $price
-   * @return float Xem price
+   * An order object
+   * @param Drupal\commerce_order\Entity\Order $order
+   * 
+   * If TRUE : save this Xem amount with the order
+   * @param boolean $save
+   * 
+   * The Xem price
+   * @return float $xemPrice
    */
-  public static function convertToXem($order, $save = FALSE) {
+  public static function convertToXem(\Drupal\commerce_order\Entity\Order $order, $save = FALSE) {
     $xemData = XemCurrency::getCurrentXemData($order, $save);
     $currencyCode = $order->getTotalPrice()->getCurrencyCode();
     $xemPrice = $order->getTotalPrice()->getNumber() / $xemData['price_' . strtolower($currencyCode)];
     return round($xemPrice, 2);
   }
-  
-  
 }

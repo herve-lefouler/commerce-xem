@@ -4,18 +4,36 @@ namespace Drupal\commerce_xem;
 
 use Drupal\commerce_xem\php2nem\NEM;
 
+/**
+ * Easy use of Nem API. 
+ */
 class NemApi {
   
   private static $instance;
   
+  /**
+   * Are we using TestNet or MainNet
+   * 
+   * @var boolean
+   */
   private $isTest;
   
+  /**
+   * The MainNet servers
+   * 
+   * @var array
+   */
   private static $servers = [
 		'bigalice3.nem.ninja',
 		'alice2.nem.ninja',
 		'go.nem.ninja'
 	];
 
+  /**
+   * The TestNet servers
+   * 
+   * @var array 
+   */
 	private static $testservers = [
 		'bob.nem.ninja',
 		'104.128.226.60',
@@ -43,6 +61,14 @@ class NemApi {
 		return self::$instance;
 	}
   
+  /**
+   * Send a Xem WS call to the right servers. 
+   * 
+   * @param string $path
+   *  The WS path
+   * 
+   * @return string $json
+   */
   private function _nemSend($path) {
     foreach ($this->getServers() as $server){
       $conf = [
@@ -60,8 +86,9 @@ class NemApi {
   /**
    * Get account info
    * 
-   * @param type $address
-   * @return type
+   * @see https://nemproject.github.io/
+   * @param $string $address
+   * @return string $json
    */
   public function getAccountInfo($address) {
     $path = 'account/get?address=' . $address;
@@ -71,9 +98,9 @@ class NemApi {
   /**
    * Get latest transactions
    * 
-   * @param type $address
-   * @param type $test
-   * @return boolean
+   * @see https://nemproject.github.io/
+   * @param string $address
+   * @return string $json
    */
   public function getLatestTransactions($address) {
     $path = 'account/transfers/incoming?address=' . $address;
